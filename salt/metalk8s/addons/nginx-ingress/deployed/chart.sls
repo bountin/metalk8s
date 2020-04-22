@@ -1,8 +1,9 @@
 #!jinja | metalk8s_kubernetes
+
 {%- from "metalk8s/repo/macro.sls" import build_image_name with context %}
 
-{% raw %}
 
+{% raw %}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -11,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: salt
     app.kubernetes.io/name: nginx-ingress
     app.kubernetes.io/part-of: metalk8s
-    chart: nginx-ingress-1.24.7
+    chart: nginx-ingress-1.36.3
     heritage: metalk8s
     release: nginx-ingress
   name: nginx-ingress
@@ -25,13 +26,13 @@ metadata:
     app.kubernetes.io/managed-by: salt
     app.kubernetes.io/name: nginx-ingress
     app.kubernetes.io/part-of: metalk8s
-    chart: nginx-ingress-1.24.7
+    chart: nginx-ingress-1.36.3
     heritage: metalk8s
     release: nginx-ingress
   name: nginx-ingress-backend
   namespace: metalk8s-ingress
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
@@ -39,7 +40,7 @@ metadata:
     app.kubernetes.io/managed-by: salt
     app.kubernetes.io/name: nginx-ingress
     app.kubernetes.io/part-of: metalk8s
-    chart: nginx-ingress-1.24.7
+    chart: nginx-ingress-1.36.3
     heritage: metalk8s
     release: nginx-ingress
   name: nginx-ingress
@@ -95,7 +96,7 @@ rules:
   verbs:
   - update
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
@@ -103,7 +104,7 @@ metadata:
     app.kubernetes.io/managed-by: salt
     app.kubernetes.io/name: nginx-ingress
     app.kubernetes.io/part-of: metalk8s
-    chart: nginx-ingress-1.24.7
+    chart: nginx-ingress-1.36.3
     heritage: metalk8s
     release: nginx-ingress
   name: nginx-ingress
@@ -117,7 +118,7 @@ subjects:
   name: nginx-ingress
   namespace: metalk8s-ingress
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
@@ -125,7 +126,7 @@ metadata:
     app.kubernetes.io/managed-by: salt
     app.kubernetes.io/name: nginx-ingress
     app.kubernetes.io/part-of: metalk8s
-    chart: nginx-ingress-1.24.7
+    chart: nginx-ingress-1.36.3
     heritage: metalk8s
     release: nginx-ingress
   name: nginx-ingress
@@ -204,7 +205,7 @@ rules:
   - create
   - patch
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
@@ -212,7 +213,7 @@ metadata:
     app.kubernetes.io/managed-by: salt
     app.kubernetes.io/name: nginx-ingress
     app.kubernetes.io/part-of: metalk8s
-    chart: nginx-ingress-1.24.7
+    chart: nginx-ingress-1.36.3
     heritage: metalk8s
     release: nginx-ingress
   name: nginx-ingress
@@ -235,14 +236,13 @@ metadata:
     app.kubernetes.io/managed-by: salt
     app.kubernetes.io/name: nginx-ingress
     app.kubernetes.io/part-of: metalk8s
-    chart: nginx-ingress-1.24.7
+    chart: nginx-ingress-1.36.3
     component: controller
     heritage: metalk8s
     release: nginx-ingress
   name: nginx-ingress-controller
   namespace: metalk8s-ingress
 spec:
-  clusterIP: ''
   ports:
   - name: http
     port: 80
@@ -254,7 +254,7 @@ spec:
     targetPort: https
   selector:
     app: nginx-ingress
-    component: controller
+    app.kubernetes.io/component: controller
     release: nginx-ingress
   type: ClusterIP
 ---
@@ -267,14 +267,13 @@ metadata:
     app.kubernetes.io/managed-by: salt
     app.kubernetes.io/name: nginx-ingress
     app.kubernetes.io/part-of: metalk8s
-    chart: nginx-ingress-1.24.7
+    chart: nginx-ingress-1.36.3
     component: default-backend
     heritage: metalk8s
     release: nginx-ingress
   name: nginx-ingress-default-backend
   namespace: metalk8s-ingress
 spec:
-  clusterIP: ''
   ports:
   - name: http
     port: 80
@@ -282,21 +281,21 @@ spec:
     targetPort: http
   selector:
     app: nginx-ingress
-    component: default-backend
+    app.kubernetes.io/component: default-backend
     release: nginx-ingress
   type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  annotations: {}
   labels:
     app: nginx-ingress
     app.kubernetes.io/component: controller
     app.kubernetes.io/managed-by: salt
     app.kubernetes.io/name: nginx-ingress
     app.kubernetes.io/part-of: metalk8s
-    chart: nginx-ingress-1.24.7
-    component: controller
+    chart: nginx-ingress-1.36.3
     heritage: metalk8s
     release: nginx-ingress
   name: nginx-ingress-controller
@@ -312,6 +311,7 @@ spec:
     metadata:
       labels:
         app: nginx-ingress
+        app.kubernetes.io/component: controller
         component: controller
         release: nginx-ingress
     spec:
@@ -333,7 +333,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         image: '{%- endraw -%}{{ build_image_name("nginx-ingress-controller", False)
-          }}{%- raw -%}:0.26.1'
+          }}{%- raw -%}:0.30.0'
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -373,7 +373,7 @@ spec:
             - NET_BIND_SERVICE
             drop:
             - ALL
-          runAsUser: 33
+          runAsUser: 101
       dnsPolicy: ClusterFirst
       hostNetwork: false
       serviceAccountName: nginx-ingress
@@ -396,8 +396,7 @@ metadata:
     app.kubernetes.io/managed-by: salt
     app.kubernetes.io/name: nginx-ingress
     app.kubernetes.io/part-of: metalk8s
-    chart: nginx-ingress-1.24.7
-    component: default-backend
+    chart: nginx-ingress-1.36.3
     heritage: metalk8s
     release: nginx-ingress
   name: nginx-ingress-default-backend
@@ -413,7 +412,7 @@ spec:
     metadata:
       labels:
         app: nginx-ingress
-        component: default-backend
+        app.kubernetes.io/component: default-backend
         release: nginx-ingress
     spec:
       containers:
